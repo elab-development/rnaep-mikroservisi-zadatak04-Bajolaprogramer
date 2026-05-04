@@ -14,7 +14,7 @@ except:
 while True:
     try:
         # Koristimo block=5000 da ne trošimo CPU dok nema poruka
-        results = redis.xreadgroup(group, key, {key: '>'}, count=1, block=5000)
+        results = redis.xread({key: '0'}, count=1, block=5000)
 
         if results:
             for result in results:
