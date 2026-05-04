@@ -4,6 +4,7 @@ from redis_om import HashModel, NotFoundError
 import httpx  # Modernija zamena za requests
 import asyncio
 from database import redis # Koristi .env iz database.py 
+from config import settings
 
 app = FastAPI(title="Order Service")
 
@@ -36,7 +37,9 @@ async def get_order(pk: str):
 async def create_order(body: dict, background_tasks: BackgroundTasks):
     # Asinhroni poziv ka Inventory servisu
     async with httpx.AsyncClient() as client:
-        response = await client.get(f'http://localhost:8000/products/{body["id"]}')
+        response = await client.get(
+    f"http://{settings.INVENTORY_HOST}:{settings.INVENTORY_PORT}/products/{body['id']}"
+)
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail="Product not found in Inventory")
         product = response.json()
@@ -52,7 +55,7 @@ async def create_order(body: dict, background_tasks: BackgroundTasks):
     order.save()
 
     # Pokretanje pozadinskog zadatka
-    background_tasks.add_task(process_order, order)
+    await process_order(order)
 
     return order
 
@@ -62,6 +65,7 @@ async def process_order(order: Order):
     order.status = 'completed'
     order.save()
     
+    print("EVENT SENT TO REDIS", order.model_dump())
     # Slanje događaja u Redis Stream za Inventory servis
     # Koristimo model_dump() jer je dict() zastareo u Pydantic V2
     redis.xadd('order_completed', order.model_dump(), '*')

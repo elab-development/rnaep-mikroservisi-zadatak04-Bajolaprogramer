@@ -1,14 +1,9 @@
-import os
-from dotenv import load_dotenv
 from redis_om import get_redis_connection
+from config import settings
 
-# Učitavamo promenljive iz .env fajla
-load_dotenv()
-
-# Izvlačimo podatke koristeći os.getenv
 redis = get_redis_connection(
-    host=os.getenv("REDIS_HOST"),
-    port=int(os.getenv("REDIS_PORT")),
-    password=os.getenv("REDIS_PASSWORD"),
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
+    password=settings.REDIS_PASSWORD,
     decode_responses=True
 )
